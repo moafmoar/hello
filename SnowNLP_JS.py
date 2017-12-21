@@ -8,12 +8,12 @@ import os
 import re
 import jieba
 import codecs
+import configparser
 
 app = Flask(__name__)
 @app.route('/')
 @app.route('/getfunc', methods=['POST', 'GET'])
 def getfunc():
-
     #data = json.loads(request.form.get('data'))
     # resp = Response(data)
     #Response.headers['Access-Control-Allow-Origin'] = '*'
@@ -116,7 +116,51 @@ def getfunc():
             "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': jsondate})),
             mimetype="text/javascript"
         )
-# ----------------------------------------------------- 以上为SnowNLP分词并处理的结果 ----------------------------------------------------------------------
+# ----------------------------------------------------- 以上为SnowNLP分词并处理的结果 ------------------------------------------
+
+def __init__():
+    print("sdsdfsf")
+    # 修改各词库的路径
+    stopword_path = 'E:/workspalce/python/hello/txt/stopwords_1.txt'
+    degreeword_path = 'E:/workspalce/python/hello/txt/degreewords_1.txt'
+    sentimentword_path = 'E:/workspalce/python/hello/txt/BosonNLP_sentiment_score_1.txt'
+
+    # 加载新词库
+    jieba.load_userdict('E:/workspalce/python/hello/txt/stock_dict.txt')
+
+    # 停用词列表
+    stopword_file = open(stopword_path, "r", encoding='UTF-8').readlines()
+    stopwords = [word.replace("\n", "") for word in stopword_file]
+
+    # 否定词表
+    notword = [u'不', u'没', u'无', u'非', u'莫', u'弗', u'勿', u'毋', u'未', u'否', u'别', u'無', u'休', u'难道']
+
+    # 程度词表
+    degreeword_file = open(degreeword_path, 'r', encoding='UTF-8').readlines()
+    degree_dict = {}
+    for word in degreeword_file:
+        word = word.replace("\n", "").split(" ")
+        degree_dict[word[0]] = word[1]
+
+    # 情感词表
+    """
+    sentimentword_file = open(sentimentword_path, encoding='utf-8').readlines()
+    sentiment_dict = {}
+    for word in sentimentword_file:
+        word = word.replace("\n","").split(" ")
+        sentiment_dict[word[0]] = word[1]
+    """
+    sentimentword_file = open(sentimentword_path, 'r', encoding='UTF-8').readlines()
+    sentiment_dict = {}
+    for word in sentimentword_file:
+        word = word.replace("\n", "").split(",")
+        word_sen = word[0].split()
+        # print("["+word_sen[0]+":"+word_sen[1]+"]")
+        sentiment_dict[word_sen[0]] = word_sen[1]
+    print("Great!We have loaded all word lists!")
+    return degree_dict,degree_dict
+
+'''
 # 修改各词库的路径
 stopword_path = 'E:/workspalce/python/hello/txt/stopwords_1.txt'
 degreeword_path = 'E:/workspalce/python/hello/txt/degreewords_1.txt'
@@ -155,8 +199,9 @@ for word in sentimentword_file:
     # print("["+word_sen[0]+":"+word_sen[1]+"]")
     sentiment_dict[word_sen[0]] = word_sen[1]
 print("Great!We have loaded all word lists!")
-
+'''
 """
+
 step 1 : 分词且去除停用词
 """
 
@@ -318,5 +363,7 @@ def test():
         )
     return ok_jsonify(data)
 '''
+# __init__()
 if __name__ == "__main__":
+    # app = __init__()
     app.run()

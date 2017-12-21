@@ -7,6 +7,7 @@ import os
 import re
 import jieba
 import codecs
+import sys
 
 # 修改各词库的路径
 stopword_path = 'E:/workspalce/python/hello/txt/stopwords_1.txt'
@@ -107,7 +108,9 @@ def sentscore(sentence):
 # print(a)
 # print(b)
 
-print(sentscore("这个事情非常难做，我非常非常不开心."))
+# print(sentscore("这个事情非常难做，我非常非常不开心."))
 
 if __name__ == '__main__':
-    print(sentscore("这个事情非常难做，我非常非常不开心."))
+    keywords = sys.argv[1]
+    testresult = sentscore(keywords)
+    print('%.5f'%testresult)
