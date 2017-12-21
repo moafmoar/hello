@@ -109,14 +109,14 @@ def getfunc():
     # print('%.5f'%(0.555555555))
 
     jsondate = {'_result_positive':'%.5f'%(_result_positive / (_result_positive + _result_negative)),
-                    '_result_negative':'%.5f'%(_result_negative / (_result_positive + _result_negative)),
+                    '_result_negative' :'%.5f'%(_result_negative / (_result_positive + _result_negative)),
                     '_result_positive_len':positive.__len__(),
                     '_result_negative_len':negative.__len__()}
     return Response( # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
             "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': jsondate})),
             mimetype="text/javascript"
         )
-
+# ----------------------------------------------------- 以上为SnowNLP分词并处理的结果 ----------------------------------------------------------------------
 # 修改各词库的路径
 stopword_path = 'E:/workspalce/python/hello/txt/stopwords_1.txt'
 degreeword_path = 'E:/workspalce/python/hello/txt/degreewords_1.txt'
