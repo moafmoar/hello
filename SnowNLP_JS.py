@@ -11,7 +11,7 @@ import codecs
 import configparser
 
 app = Flask(__name__)
-@app.route('/')
+@app.route('/') #如果有多个方法，需要添加该改注解
 @app.route('/getfunc', methods=['POST', 'GET'])
 def getfunc():
     #data = json.loads(request.form.get('data'))
