@@ -15,7 +15,7 @@ def getfunc():
     # data = json.loads(request.get_json())
     # story_data = json.loads(request.get_data().decode('utf-8'))
     #context = data['lesson']
-    jsonp_callback = request.args.get('callback', 'jsonpCallback1')
+    jsonp_callback = request.args.get('callback', 'jsonpCallback1') # 这里的callback对应的值需要和ajax请求的callback保持一致。
     context = request.values['content']
     print(context)
     s = SnowNLP(context)
@@ -105,7 +105,7 @@ def getfunc():
                     '_result_negative':_result_negative / (_result_positive + _result_negative),
                     '_result_positive_len':positive.__len__(),
                     '_result_negative_len':negative.__len__()}
-    return Response(
+    return Response( # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
             "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': jsondate})),
             mimetype="text/javascript"
         )
