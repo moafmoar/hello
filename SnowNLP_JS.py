@@ -266,6 +266,15 @@ def sentscore():
         mimetype="text/javascript"
     )
 
+@app.route('/test',methods=['POST','GET'])
+def test():
+    jsonp_callback = request.args.get('callback', 'jsonpCallback1')  # 这里的callback对应的值需要和ajax请求的callback保持一致。
+    print("测试调用方式");
+    return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': "调用成功"})),
+        mimetype="text/javascript"
+    )
+
 '''
 @app.route('/testajax')
 def testAjax(request):

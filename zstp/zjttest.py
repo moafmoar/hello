@@ -1,3 +1,8 @@
+'''
+ 分词脚本
+'''
+
+
 import jieba
 import numpy as np
 import pandas as pd
