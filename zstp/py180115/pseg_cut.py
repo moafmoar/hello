@@ -1,16 +1,13 @@
 """
-词频统计
+对分词进行词性标注
 """
 import jieba
+import os
 import numpy as np
-from collections import  Counter
-import pandas as pd
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
 import jieba.posseg as pseg
-# jieba.add_word('供给侧')
+import pandas as pd
 
-path='F:\\easestar\\zstp20180109' #文件存放目录
+path='c:\\work\\jpy' #文件存放目录
 
 def read_stopword(path=path):
     """
@@ -30,37 +27,8 @@ def readtext(path=path):
     """
     path=path+'\\test.txt'
     # texts=[text.strip('\n').strip() for text in open(path,'r',encoding='gbk').read()]
-    texts=open(path,'r',encoding='utf-8').read()
-    return texts.strip('\n').strip()
-def word_count(text,stopword,k=10):
-    """
-    读取字符串，返回单词和频率数据框,字典结构
-    :param text:
-    :param stopword:
-    :param k 词频排名前k位的
-    :return:返回词和频数的数据框
-    """
-    word_count=dict()
-    # word=[]
-    words=[wd.strip() for wd in jieba.cut(text) if wd not in stopword and wd!='\n' and wd!='\d']
-    for word in words:
-        if word not in word_count:
-            word_count[word]=1
-        else:
-            word_count[word] += 1
-    # print(Counter(word))
-    word_count = sorted(word_count.items(), key=lambda d: d[1], reverse=True)
-    if k is not None:
-       word_count1=word_count[:k]
-    else:
-        word_count1 = word_count
-
-    word_dict=dict(word_count1)
-    df_word=pd.DataFrame({'word':[word_count1[i][0]  for i in range(len(word_count1))  ],'freq':[
-        word_count1[i][1] for i in range(len(word_count1))
-    ]},columns=['word','freq'])
-
-    return df_word,word_dict
+    texts=open(path,'r',encoding='gbk').read().strip('/n').strip()
+    return texts
 
 def pseg_cut(text,stopwords=None):
     """
@@ -69,23 +37,13 @@ def pseg_cut(text,stopwords=None):
     :return:分词结果和词性列表
     """
     words=[(word,pseg) for word,pseg in pseg.cut(text) if word not in stopwords
-           and word !='\n' and word !='\d']
-
-
+           and word !='\n']
     df_word=pd.DataFrame({'word':[words[i][0] for i in range(len(words))],
                           'class':[words[i][1] for i in range(len(words))]},
                          columns=['word','class'])
-    df_word=df_word.drop_duplicates()
-
-    return df_word
-
-def merge_df(df_word,df_count):
-    df_word=pd.merge(df_word,df_count)
+    df_word = df_word.drop_duplicates()
     df_word.index=range(len(df_word))
-    df_word['out']=df_word['word']+'/'+df_word['class']+'/'+df_word['freq'].astype(str)
-
     return df_word
-
 
 def color_df(df_word):
     """"
@@ -202,60 +160,23 @@ def color_df(df_word):
 'userDefine' : "#0080FF"
 	}
     df_word['color']=list(map(lambda x:color[x],df_word['class']))
-    df_word['ind']=list(range(len(df_word)))
     return df_word
 
-def dict_df(df_word):
-    """
-    返回要求的字典形式
-    :param df_word: 词频、词性数据框
-    :return: 返回字典形式
-    """
-    df_dict={}
-    for i in range(len(df_word)):
-        x=df_word.loc[i,:]
-        if x['ind'] not in df_dict:
-            df_dict[x['ind']]={}
-            df_dict[x['ind']]={'name':x['out'] ,'itemStyle': {'normal':{'colour':x['color']}},'value':1000-x['ind']}
-
-    return df_dict
-
-
-def cloud_word(word_freq):
-    """
-    输入词频字典，返回词云图
-    :param word_freq: 词频字典
-    :return: 词云图
-    """
-    word_cloud=WordCloud(font_path = "F:\\easestar\\zstp20180109\\MSYH.TTF",
-        background_color='black',max_words=100,
-                         max_font_size=100,
-                         random_state=42,
-                         width=800, height=600)
-    word_cloud.generate_from_frequencies(word_freq)
-    # cut_text=jieba.cut(text)
-    # result='/'.join(cut_text)
-    plt.imshow(word_cloud)
-    plt.axis('off')
-    plt.show()
 
 
 if __name__=='__main__':
-    path = 'F:\\easestar\\zstp20180109'#文件存储位置
-    stopword=read_stopword(path=path)
-    text=readtext(path=path)
-    df1=pseg_cut(text, stopwords=stopword)
-    df2,word_dict=word_count(text=text,stopword=stopword,k=None)
-    df=merge_df(df2,df1)
-    df_cl=color_df(df)
-    # print(df_cl['ind'])
-    df_dict=dict_df(df_cl)   #你们需要调用的字典形式的返回文件
-    print(len(df))
-    for key,valuein in df_dict.items():
-        print(key,valuein)
-    # for i in df_dict:
-    #     print(i)
-    # cloud_word(word_dict)
+    stopwords=read_stopword()
+    texts=readtext()
+    # print(texts)
+    # words=[pseg_cut(text,stopwords=stopwords) for text in texts]
+    words=pseg_cut(texts,stopwords=stopwords)
 
+    print(color_df(words))
 
+    # for word in words:
+    #     # print(np.shape(word))
+    #     if word ==[]:
+    #         continue
+    #     else:
+    #         print(word)
 

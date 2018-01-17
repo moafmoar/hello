@@ -4,11 +4,6 @@
 
 
 import jieba
-import numpy as np
-import pandas as pd
-# from tqdm import *
-import os
-import re
 import datetime
 path=r'E:\\workspalce\\python\\hello\\txt\\test.txt'
 def word_cut(path=path):
@@ -31,7 +26,7 @@ def word_cut(path=path):
    
 # print(add_a_b(3,4))
 
-if __name__ == '__main__':
+if __name__=='__main__':
     # begin = datetime.datetime.now()
     print(word_cut())
     # end = datetime.datetime.now()

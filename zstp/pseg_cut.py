@@ -7,7 +7,7 @@ import numpy as np
 import jieba.posseg as pseg
 import pandas as pd
 
-path='c:\\work\\jpy' #文件存放目录
+path='F:\\easestar\\zstp20180109' #文件存放目录
 
 def read_stopword(path=path):
     """
@@ -27,7 +27,7 @@ def readtext(path=path):
     """
     path=path+'\\test.txt'
     # texts=[text.strip('\n').strip() for text in open(path,'r',encoding='gbk').read()]
-    texts=open(path,'r',encoding='gbk').read().strip('/n').strip()
+    texts=open(path,'r',encoding='utf-8').read().strip('/n').strip()
     return texts
 
 def pseg_cut(text,stopwords=None):

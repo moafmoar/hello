@@ -3,12 +3,19 @@
 from snownlp import SnowNLP
 import json
 from flask import Flask, render_template, request, jsonify,Response
-from collections import defaultdict
-import os
-import re
+#from collections import defaultdict
+#import os
+#import re
 import jieba
-import codecs
-import configparser
+#import codecs
+#import configparser
+#===================================
+import numpy as np
+from collections import Counter
+import pandas as pd
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import jieba.posseg as pseg
 
 app = Flask(__name__)
 @app.route('/') #如果有多个方法，需要添加该改注解
@@ -272,8 +279,73 @@ def test():
     print("测试调用方式");
     return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
         "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': "调用成功"})),
-        mimetype="text/javascript"
-    )
+        mimetype="text/javascript")
+
+'''
+词频统计功能
+'''
+@app.route('/word_count',methods=['POST','GET'])
+def word_count(k=10):
+    '''
+     读取字符串，返回单词和频率数据框,字典结构
+    :param text:
+    :param stopword:
+    :param k 词频排名前k位的
+    :return:返回词和频数的数据框
+    '''
+    jsonp_callback = request.args.get('callback', 'jsonpCallback1')  # 这里的callback对应的值需要和ajax请求的callback保持一致。
+    #text = '读取字符串，返回单词和频率数据框,字典结构'
+    text = request.values['text']
+    print(text)
+    path = 'F:\\easestar\\zstp20180109\\stopwords.txt'
+    stopword = [word.strip('\n') for word in open(path, 'r', encoding='utf-8').readlines()]
+    word_count=dict()
+    # word=[]
+    words=[wd.strip() for wd in jieba.cut(text) if wd not in stopword and wd!='\n' and wd!='\d']
+    for word in words:
+        if word not in word_count:
+            word_count[word]=1
+        else:
+            word_count[word] += 1
+    # print(Counter(word))
+    word_count = sorted(word_count.items(), key=lambda d: d[1], reverse=True)
+    word_count1=word_count[:k]
+    word_dict=dict(word_count1)
+
+    '''
+    df_word=pd.DataFrame({'word':[word_count1[i][0]  for i in range(len(word_count1))],
+                          'freq':[word_count1[i][1] for i in range(len(word_count1))]},columns=['word','freq'])
+    '''
+    #return df_word,word_dict
+    return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': word_dict},ensure_ascii=False)),
+        mimetype="text/javascript")
+
+'''
+词性标注功能
+'''
+@app.route('/pseg_cut',methods=['POST','GET'])
+def pseg_cut():
+    """
+    给定文本进行分词，标注。返回分词和词性数据框
+    :param text:字符串
+    :return:分词结果和词性列表
+    """
+    jsonp_callback = request.args.get('callback', 'jsonpCallback1')  # 这里的callback对应的值需要和ajax请求的callback保持一致。
+    # text = '读取字符串，返回单词和频率数据框,字典结构'
+    text = request.values['text']
+    print(text)
+    path = 'F:\\easestar\\zstp20180109\\stopwords.txt'
+    stopwords = [word.strip('\n') for word in open(path, 'r', encoding='utf-8').readlines()]
+    words=[(word,pseg) for word,pseg in pseg.cut(text) if word not in stopwords
+           and word !='\n']
+    df_word=pd.DataFrame({'word':[words[i][0] for i in range(len(words))],
+                          'class':[words[i][1] for i in range(len(words))]},
+                         columns=['word','class'])
+    #return df_word
+    return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': words}, ensure_ascii=False)),
+        mimetype="text/javascript")
 
 '''
 @app.route('/testajax')
