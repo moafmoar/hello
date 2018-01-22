@@ -123,7 +123,7 @@ def getfunc():
             "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': jsondate})),
             mimetype="text/javascript"
         )
-# ----------------------------------------------------- 以上为SnowNLP分词并处理的结果 ------------------------------------------
+# ----------------------------------------------------- 以上为SnowNLP分词并处理的结果 ----------------------------------------------
 
 def __init__():
     print("sdsdfsf")
@@ -406,8 +406,12 @@ def word_count_new(k=10):
     df_dict = dict_df(df_cl)  # 你们需要调用的字典形式的返回文件
 
     print(len(df_dict))
+    dataMap = []
     for key, valuein in df_dict.items():
         print(key, valuein)
+        #dataMap.insert(key,valuein)
+        #dataMap.values(valuein)
+        dataMap.append(valuein)
 
     '''
     df_word=pd.DataFrame({'word':[word_count1[i][0]  for i in range(len(word_count1))],
@@ -415,7 +419,7 @@ def word_count_new(k=10):
     '''
     #return df_word,word_dict
     return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
-        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': df_dict},ensure_ascii=False)),
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': str(dataMap)},ensure_ascii=False)),
         mimetype="text/javascript")
 
 def pseg_cut(text,stopwords):
@@ -601,7 +605,7 @@ def dict_df(df_word):
         x=df_word.loc[i,:]
         if x['ind'] not in df_dict:
             df_dict[x['ind']]={}
-            df_dict[x['ind']]={'name':x['out'] ,'itemStyle': {'normal':{'colour':x['color']}},'value':1000-x['ind']}
+            df_dict[x['ind']]={'name':x['out'] ,'itemStyle': {'normal':{'color':x['color']}},'value':1000-x['ind']}
 
     return df_dict
 

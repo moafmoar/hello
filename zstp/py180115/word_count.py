@@ -113,7 +113,7 @@ if __name__=='__main__':
     df=merge_df(df2,df1)
     print(len(df))
     print(df['out'])
-    cloud_word(word_dict)
+    #cloud_word(word_dict)
 
 
 

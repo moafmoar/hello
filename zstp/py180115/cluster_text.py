@@ -12,8 +12,8 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
-path='c:\\work\\jpy'
-filepath='c:\\work\\jpy\\cdata'
+path='F:\\easestar\\zstp20180109'
+filepath='F:\\easestar\\zstp20180109\\cdata'
 
 
 
@@ -145,8 +145,8 @@ def get_labels(filenames,label):
 
 
 if __name__=='__main__':
-    path = 'c:\\work\\jpy'
-    filepath = 'c:\\work\\jpy\\cdata'
+    path = 'F:\\easestar\\zstp20180109'
+    filepath = 'F:\\easestar\\zstp20180109\\cdata'
     stopwords=read_stopword(path=path)         #读取停用词字典
     docs_list,filenames=readfile(stopwords,path=filepath)  #获得分词后的列表
     # print(docs_list)
