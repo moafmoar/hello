@@ -322,7 +322,7 @@ def word_count(k=10):
         mimetype="text/javascript")
 
 
-################################################ 180115_new start #########################################################################
+################################################ 180122_new start #########################################################################
 @app.route('/word_count_new',methods=['POST','GET'])
 def word_count_new(k=10):
     '''
@@ -401,7 +401,7 @@ def word_count_new(k=10):
     df_cl = color_df(df_word)
 
     '''
-     第五步：color_df
+     第五步：dict_df
     '''
     df_dict = dict_df(df_cl)  # 你们需要调用的字典形式的返回文件
 
@@ -494,7 +494,7 @@ def color_df(df_word):
 	   'nl'  :"#FF7F50"  ,
 	   'ng'  :"#FF6EB4"  ,
 	   'l'   : "#ff8000" ,
-	   'en'  :"#FF0080"  ,
+	   'eng'  :"#FF0080"  ,
 	   't'   : "#FF4500" ,
 	   'tg' : "#FF3030"  ,
 	   's'  : "#aaaaff"  ,
@@ -517,6 +517,7 @@ def color_df(df_word):
 	   'b'  : "#ffb5b5"  ,
 	   'bl' : "#6B8E23"  ,
 	   'z'  : "#e2c2de"  ,
+       'zg' : "#e2c2de",
 	   'r'  : "#00EEEE"  ,
 	   'rr' : "#c1ffe4"  ,
 	   'vz' : "#c1ffe4"  ,
@@ -605,14 +606,16 @@ def dict_df(df_word):
         x=df_word.loc[i,:]
         if x['ind'] not in df_dict:
             df_dict[x['ind']]={}
-            df_dict[x['ind']]={'name':x['out'] ,'itemStyle': {'normal':{'color':x['color']}},'value':1000-x['ind']}
+            df_dict[x['ind']]={'name':x['out'] ,'itemStyle': {'normal':{'color':x['color']}},'value':10000-x['ind']*1000}
 
     return df_dict
 
 
 
 
-################################################ 180115_new end #########################################################################
+################################################ 180122_new end #########################################################################
+
+################################################ 180122_new start pseg_cut#########################################################################
 '''
 词性标注功能
 '''
@@ -629,16 +632,186 @@ def pseg_cut():
     print(text)
     path = 'F:\\easestar\\zstp20180109\\stopwords.txt'
     stopwords = [word.strip('\n') for word in open(path, 'r', encoding='utf-8').readlines()]
+
+    '''
     words=[(word,pseg) for word,pseg in pseg.cut(text) if word not in stopwords
            and word !='\n']
     df_word=pd.DataFrame({'word':[words[i][0] for i in range(len(words))],
                           'class':[words[i][1] for i in range(len(words))]},
                          columns=['word','class'])
+    '''
+
+    '''
+    第一步 pseg_cut
+    '''
+    words = [(word, pseg) for word, pseg in pseg.cut(text) if word not in stopwords
+             and word != '\n']
+    df_word = pd.DataFrame({'word': [words[i][0] for i in range(len(words))],
+                            'class': [words[i][1] for i in range(len(words))]},
+                           columns=['word', 'class'])
+    df_word = df_word.drop_duplicates()
+    df_word.index = range(len(df_word))
+
+
+    '''
+    第二步  color_df_psegCut
+    '''
+    words = color_df_psegCut(df_word)
+    # print(words)
+
+    '''
+    第三步 cov_dict
+    '''
+    df_dict = cov_dict(words)
+
+    dataMap = []
+    for key, valuein in df_dict.items():
+        print(key, valuein)
+        # dataMap.insert(key,valuein)
+        # dataMap.values(valuein)
+        dataMap.append(valuein)
+
     #return df_word
     return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
-        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': words}, ensure_ascii=False)),
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': str(dataMap)}, ensure_ascii=False)),
         mimetype="text/javascript")
 
+
+def color_df_psegCut(df_word):
+    """"
+    返回每个词性对应的颜色的数据框
+    """
+    color={
+	   'n'   : "#ff8000" ,
+	   'nr'  :"#FFF68F" ,
+	   'nr1' :"#FFEFD5"  ,
+	   'nr2' : "#FFE4E1" ,
+	   'nrj' : "#FFDEAD" ,
+	   'nrf' : "#FFC1C1" ,
+       'nrt': "#FFC1C1",
+	   'ns'  : "#FFB90F" ,
+	   'nsf' : "#FFA54F" ,
+	   'nt'  : "#FF34B3" ,
+	   'nz'  :"#FF8C00"  ,
+	   'nl'  :"#FF7F50"  ,
+	   'ng'  :"#FF6EB4"  ,
+	   'l'   : "#ff8000" ,
+	   'eng'  :"#FF0080"  ,
+	   't'   : "#FF4500" ,
+	   'tg' : "#FF3030"  ,
+	   's'  : "#aaaaff"  ,
+	   'f'  : "#97cbff"  ,
+	   'v'  : "#0080ff"  ,
+	   'vd' : "#C1CDCD"  ,
+	   'vn' : "#BFEFFF"  ,
+	   'an' : "#BDBDBD"  ,
+	  'vyou': "#BC8F8F"  ,
+	   'vf' : "#B9D3EE"  ,
+	   'vx' : "#B5B5B5"  ,
+	   'vi' : "#B3EE3A"  ,
+	  'vl'  : "#B22222"  ,
+	  'vg'  : "#B23AEE"  ,
+	   'a'  : "#deffac"  ,
+	   'ad' : "#8B795E"  ,
+	  'vshi': "#8B6969"  ,
+	   'ag' : "#7EC0EE"  ,
+	   'al' : "#7CFC00"  ,
+	   'b'  : "#ffb5b5"  ,
+	   'bl' : "#6B8E23"  ,
+	   'z'  : "#e2c2de"  ,
+       'zg' : "#e2c2de",
+	   'r'  : "#00EEEE"  ,
+	   'rr' : "#c1ffe4"  ,
+	   'vz' : "#c1ffe4"  ,
+	   'rzt': "#008B8B"  ,
+	   'rzs': "#00688B"  ,
+	   'rzv': "#27408B"  ,
+	   'ry' : "#218868"  ,
+	   'ryt': "#20B2AA"  ,
+	   'rys': "#2E8B57"  ,
+	   'ryv': "#228B22"  ,
+	   'rg' : "#218868"  ,
+	   'rz' : "#548B54"  ,
+	   'm'  : "#6C7E92"  ,
+	   'mq' :"#0000CD"   ,
+	   'q'  : "#a3d1d1"  ,
+	   'qv' : "#0000EE"  ,
+	   'qt' : "#ca8eff"  ,
+	   'd'  : "#b8b8dc"  ,
+	   'p'  : "#ffd9ec"  ,
+	   'pba': "#00FA9A"  ,
+	   'pbei': "#00F5FF" ,
+	   'c'  : "#ffe6d9"  ,
+	   'cc' : "#00EE76"  ,
+	   'u'  : "#d9b3b3"  ,
+	   'ul' : "#d9b3b9"  ,
+	   'uzhe': "#00E5EE" ,
+	   'ule' : "#00CED1" ,
+	   'uguo': "#00CD66" ,
+	   'ude1': "#8B2252" ,
+	   'ude2': "#8B008B" ,
+	   'ude3': "#8968CD" ,
+	   'usuo': "#878787" ,
+	  'udeng': "#838B8B" ,
+	   'uyy' : "#7FFFD4" ,
+	   'udh' : "#7D9EC0" ,
+	   'uls' : "#7CCD7C" ,
+	   'uzhi': "#7A7A7A" ,
+	  'ulian': "#708090" ,
+	   'uj'  : "#8080FF" ,
+	   'uv'  : "#B0E11E" ,
+	   'uz'  : "#00FF80" ,
+	   'i'   : "#408080" ,
+	   'j'   : "#566CA9" ,
+	   'ug'  : "#408080" ,
+	   'dg'  : "#408080" ,
+	   'e'   : "#cdcd9a" ,
+	   'y'   : "#9f35ff" ,
+	   'o'   : "#ffed97" ,
+	   'h'   : "#ffbfff" ,
+	   'k'   : "#84c1ff" ,
+	   'x'   : "#bbffbb" ,
+	   'xs'  : "#000080" ,
+	   'xm'  : "#008B45" ,
+	   'xu'  : "#006400" ,
+	   'xe'  : "#EE2C2C" ,
+	   'w'   : "#bebebe" ,
+	   'wkz' : "#6495ED" ,
+	   'wky' : "#607B8B" ,
+	   'wyz' : "#5CACEE" ,
+	   'wyy' : "#575757" ,
+	   'wj'  : "#528B8B" ,
+	   'ww'  : "#483D8B" ,
+	   'wt'  : "#458B74" ,
+	   'wd'  : "#436EEE" ,
+	   'wf'  : "#3A5FCD" ,
+	   'wn'  : "#2F4F4F" ,
+	   'wm'  : "#20B2AA" ,
+	   'ws'  : "#1C86EE" ,
+	   'wp'  : "#1874CD" ,
+	   'wb'  : "#104E8B" ,
+	   'wh'  : "#00FF7F" ,
+'userDefine' : "#0080FF"
+	}
+    df_word['color']=list(map(lambda x:color[x],df_word['class']))
+    return df_word
+
+def cov_dict(df_word):
+	"""
+	返回要求的字典形式
+	:param df_word: 词频、词性数据框
+	:return: 返回字典形式
+	"""
+	df_word['ind']=pd.Series(df_word.index)
+	df_dict = {}
+	for i in range(len(df_word)):
+		x = df_word.loc[i, :]
+		if x['ind'] not in df_dict:
+			df_dict[x['ind']] = {}
+			df_dict[x['ind']] = {'name': x['word'], 'class': x['class'],'color':x['color']}
+
+	return df_dict
+##########################################################################180122 end pseg_cut############################################################################
 '''
 @app.route('/testajax')
 def testAjax(request):
