@@ -54,19 +54,19 @@ def getfunc():
         _snownlpNum + 1
 
     '''
-    print(s0.sentiments)
-    print(s1.sentiments)
-    print(s2.sentiments)
-    print(s3.sentiments)
-    print(s4.sentiments)
-    arry.insert(0,s0.sentiments)
-    arry.insert(1,s1.sentiments)
-    arry.insert(2,s2.sentiments)
-    arry.insert(3,s3.sentiments)
-    arry.insert(4,s4.sentiments)
-    print(arry)
-     s2 = SnowNLP(sentence[1])
-     print("s2:"+s2.sentiments)
+        print(s0.sentiments)
+        print(s1.sentiments)
+        print(s2.sentiments)
+        print(s3.sentiments)
+        print(s4.sentiments)
+        arry.insert(0,s0.sentiments)
+        arry.insert(1,s1.sentiments)
+        arry.insert(2,s2.sentiments)
+        arry.insert(3,s3.sentiments)
+        arry.insert(4,s4.sentiments)
+        print(arry)
+        s2 = SnowNLP(sentence[1])
+        print("s2:"+s2.sentiments)
     '''
     positive = []
     negative = []
@@ -126,7 +126,7 @@ def getfunc():
 # ----------------------------------------------------- 以上为SnowNLP分词并处理的结果 ----------------------------------------------
 
 def __init__():
-    print("sdsdfsf")
+    # print("sdsdfsf")
     # 修改各词库的路径
     stopword_path = 'E:/workspalce/python/hello/txt/stopwords_1.txt'
     degreeword_path = 'E:/workspalce/python/hello/txt/degreewords_1.txt'
@@ -322,7 +322,7 @@ def word_count(k=10):
         mimetype="text/javascript")
 
 
-################################################ 180122_new start #########################################################################
+################################################ 180122_new word_count_new start #########################################################################
 @app.route('/word_count_new',methods=['POST','GET'])
 def word_count_new(k=10):
     '''
@@ -613,7 +613,7 @@ def dict_df(df_word):
 
 
 
-################################################ 180122_new end #########################################################################
+################################################ 180122_new word_count_new end #########################################################################
 
 ################################################ 180122_new start pseg_cut#########################################################################
 '''
@@ -664,6 +664,9 @@ def pseg_cut():
     '''
     df_dict = cov_dict(words)
 
+    '''
+    第四步 封装返回数据
+    '''
     dataMap = []
     for key, valuein in df_dict.items():
         print(key, valuein)
@@ -811,7 +814,7 @@ def cov_dict(df_word):
 			df_dict[x['ind']] = {'name': x['word'], 'class': x['class'],'color':x['color']}
 
 	return df_dict
-##########################################################################180122 end pseg_cut############################################################################
+########################################################################## 180122 end pseg_cut############################################################################
 '''
 @app.route('/testajax')
 def testAjax(request):

@@ -165,7 +165,7 @@ if __name__=='__main__':
         dict_label=get_labels(filenames,label)
         print(dict_label)
 
-    plt.plot(range(2,17),erros)    #聚类个数与类与中心距离关系
+    plt.plot(range(2,17),erros)   #聚类个数与类与中心距离关系
     plt.show()
 
 
