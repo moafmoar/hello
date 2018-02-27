@@ -106,6 +106,7 @@ def color_df(df_word):
 	   'ng'  :"#FF6EB4"  ,
 	   'l'   : "#ff8000" ,
 	   'en'  :"#FF0080"  ,
+	   'eng': "#FF0080",
 	   't'   : "#FF4500" ,
 	   'tg' : "#FF3030"  ,
 	   's'  : "#aaaaff"  ,
