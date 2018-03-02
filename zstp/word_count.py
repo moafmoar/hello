@@ -241,6 +241,22 @@ def cloud_word(word_freq):
     plt.show()
 
 
+##############################################18-02-27 图表模式数据封装 start#####################################################
+def x_y_df(df):
+	"""
+	计算各种词性的词频
+	:param df: 数据框
+	:return: 返回字典形式
+	"""
+	x_y_dict={}
+	for i in df['class'].unique():
+		x=df[df['class']==i]
+		x_y_dict[i]=dict()
+		x_y_dict[i]['X']=list(x['word'])
+		x_y_dict[i]['Y'] = list(x['freq'])
+	return x_y_dict
+##############################################18-02-27 图表模式数据封装 end #####################################################
+
 if __name__=='__main__':
     path = 'F:\\easestar\\zstp20180109'#文件存储位置
     stopword=read_stopword(path=path)
@@ -252,11 +268,14 @@ if __name__=='__main__':
     # print(df_cl['ind'])
     df_dict=dict_df(df_cl)   #你们需要调用的字典形式的返回文件
     print(len(df))
-    for key,valuein in df_dict.items():
-        print(key,valuein)
+    # for key,valuein in df_dict.items():
+        # print(key,valuein)
     # for i in df_dict:
     #     print(i)
     # cloud_word(word_dict)
+
+    x_y_dict = x_y_df(df)
+    print(x_y_dict)
 
 
 
