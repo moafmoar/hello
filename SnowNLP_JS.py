@@ -816,8 +816,80 @@ def cov_dict(df_word):
 ########################################################################## 180122 end pseg_cut############################################################################
 
 
-###############################################180228 词频统计 start#####################################
+###############################################180306 词频统计 start#####################################
 
+@app.route('/word_count_chart',methods=['POST','GET'])
+def word_count_chart():
+    '''
+     step 1 加载停用词并且获取前台传递的参数
+    '''
+
+    jsonp_callback = request.args.get('callback', 'jsonpCallback1')  # 这里的callback对应的值需要和ajax请求的callback保持一致。
+    # text = '读取字符串，返回单词和频率数据框,字典结构'
+    text = request.values['text']
+    print(text)
+    path = 'F:\\easestar\\zstp20180109\\stopwords.txt'
+    stopwords = [word.strip('\n') for word in open(path, 'r', encoding='utf-8').readlines()]
+    '''
+    step 2 pseg_cut
+    '''
+    words = [(word, pseg) for word, pseg in pseg.cut(text) if word not in stopwords
+             and word != '\n' and word != '\d']
+
+    df_word1 = pd.DataFrame({'word': [words[i][0] for i in range(len(words))],
+                             'class': [words[i][1] for i in range(len(words))]},
+                            columns=['word', 'class'])
+    df_word1 = df_word1.drop_duplicates()
+
+    '''
+    step 3 word_count2
+    '''
+    # df2, word_dict = word_count2(text, stopword,10)
+    word_count = dict()
+    # word=[]
+    words2 = [wd.strip() for wd in jieba.cut(text) if wd not in stopwords and wd != '\n' and wd != '\d']
+    for word in words2:
+        if word not in word_count:
+            word_count[word] = 1
+        else:
+            word_count[word] += 1
+    # print(Counter(word))
+    word_count = sorted(word_count.items(), key=lambda d: d[1], reverse=True)
+    k = words.__len__();
+    if k is not None:
+        word_count1 = word_count[:k]
+    else:
+        word_count1 = word_count
+
+    word_dict = dict(word_count1)
+    df_word2 = pd.DataFrame({'word': [word_count1[i][0] for i in range(len(word_count1))], 'freq': [
+        word_count1[i][1] for i in range(len(word_count1))
+    ]}, columns=['word', 'freq'])
+
+    '''
+     step 4 merge_df
+    '''
+    # df = merge_df(df2, df1)
+    df_word = pd.merge(df_word2, df_word1)
+    df_word.index = range(len(df_word2))
+    df_word['out'] = df_word['word'] + '/' + df_word['class'] + '/' + df_word['freq'].astype(str)
+
+    '''
+    step 5 x_y_df
+    '''
+    x_y_dict = {}
+    for i in df_word['class'].unique():
+        x = df_word[df_word['class'] == i]
+        x_y_dict[i] = dict()
+        x_y_dict[i]['X'] = list(x['word'])
+        x_y_dict[i]['Y'] = list(x['freq'])
+    print(x_y_dict)
+
+
+    return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': str(x_y_dict)}, ensure_ascii=False)),
+        mimetype="text/javascript")
+'''
 def x_y_df():
     x_y_dict = {}
     for i in df['class'].unique():
@@ -827,7 +899,7 @@ def x_y_df():
         x_y_dict[i]['Y'] = list(x['freq'])
     return x_y_dict
 
-
+'''
 ###############################################180228 词频统计 end  #####################################
 '''
 @app.route('/testajax')
