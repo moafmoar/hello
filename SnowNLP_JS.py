@@ -6,7 +6,8 @@ from flask import Flask, render_template, request, jsonify,Response
 #from collections import defaultdict
 #import os
 #import re
-import jieba
+#import jieba
+import jieba, re
 #import codecs
 #import configparser
 #===================================
@@ -16,6 +17,7 @@ import pandas as pd
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import jieba.posseg as pseg
+import sys, unicodedata
 
 app = Flask(__name__)
 @app.route('/') #如果有多个方法，需要添加该改注解
@@ -901,103 +903,177 @@ def x_y_df():
 
 '''
 ###############################################180228 词频统计 end  #####################################
+
+###############################################180320 聚类分析 start  #####################################
+
+
 '''
-@app.route('/testajax')
-def testAjax(request):
-    func = request.GET.get('callback')
-    content = '%s(100000)' % (func,)
-    return HttpResponse(content)
-
-@app.route('/demo', methods=['POST'])
-def home():
-    data = json.loads(request.form.get('data'))
-    result_json = json.dumps(data)
-    # Response
-    resp = Response(result_json)
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
-
-def request_ajax_url(url, body, referer=None, cookie=None, **headers):
-    import urllib
-    req = urllib2.Request(url)
-
-    req.add_header('Content-Type', 'application/json')
-    req.add_header('X-Requested-With','XMLHttpRequest')
-
-    if cookie:
-        req.add_header('Cookie', cookie)
-
-    if referer:
-        req.add_header('Referer', referer)
-
-    if headers:
-        for k in headers.keys():
-            req.add_header(k, headers[k])
-
-    postBody = json.dumps(body)
-
-    response = urllib2.urlopen(req, postBody)
-
-    if response:
-        return response
-    
-@app.route('/run')
-def run():
-    import time
-    "use username:xfkxfk; use password:123456"
-
-    login_url = 'http://www.xx.com/member/Login.aspx'
-    login_body = {"action":"login","UserName":"xfkxfk","Password":"123456","AutomaticLogin":False}
-    login_referer = "http://www.xx.com/member/Login.aspx?ReturnUrl=aHR0cDovL3d3dy5sdXNlbi5jb20vRGVmYXVsdC5hc3B4"
-
-    url = 'http://www.xx.com/Member/MobileValidate.aspx'
-    referer = "http://www.xx.com/Member/ModifyMobileValidate.aspx"
-
-    headers = {}
-
-    response = request_ajax_url(login_url, login_body, login_referer)
-
-    if response.read() == "1":
-        print(" Login Success !!!")
-
-    if response.headers.has_key('set-cookie'):
-        set_cookie = response.headers['set-cookie']
-    else :
-        print (" Get set-cookie Failed !!! May Send Messages Failed ~~~")
-
-    if len(sys.argv) < 3:
-        print ("\nUsage: python " + sys.argv[0] + "mobile_number" + "count\n")
-        sys.exit()
-
-    mobile_number = sys.argv[1]
-    count = sys.argv[2]
-    body = {"action":"GetValidateCode","Mobile":mobile_number}
-
-    i=0
-    while i < int(count):
-        response = request_ajax_url(url,body,referer,set_cookie)
-        i= i+1
-
-    if response.read() == "发送成功":
-        print(" Send " + count + " Messages To " + mobile_number + " !!!")
-
-
-
-def test():
-    import json
-    from flask import jsonify, Response, json
-
-    data = []  # or others
-    return jsonify(ok=True, data=data)
-
-    jsonp_callback = request.args.get('callback', '')
-    if jsonp_callback:
-        return Response(
-            "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': data})),
-            mimetype="text/javascript"
-        )
-    return ok_jsonify(data)
+  聚类分析
 '''
+from sklearn.externals import joblib as jl
+@app.route('/classify_text',methods=['POST','GET'])
+def classify_text():
+    jsonp_callback = request.args.get('callback', 'jsonpCallback1')  # 这里的callback对应的值需要和ajax请求的callback保持一致。
+    # text = '读取字符串，返回单词和频率数据框,字典结构'
+    texts = request.values['text']
+    print(texts)
+    main_path = 'E:\workspalce\python\hello\zstp\py180208'
+    '''
+    step 1 接收封装数据
+    '''
+    dataset = recive_data(texts)  # 从前端接收数据
+
+    '''
+    step 2  加载模型
+    '''
+    t,com_chi2, com_model = read_model(main_path)  # 加载模型
+    '''
+    step 2  处理数据
+    '''
+    dataset = dis_data(dataset,main_path)  # 处理数据
+
+    '''
+    step 3 预测数据分类
+    '''
+    predict_id = model_fit(dataset, t, com_chi2, com_model)  # 预测问题分类
+
+    '''
+    step 4 预测标签列
+    '''
+    dataset['predict_label'] = predict_id  # 预测标签列
+
+    '''
+    step 5 返回字典形式的投诉类别的种类
+    '''
+    dict_freq = dict_df_classify(dataset['predict_label'])  # 返回字典形式的投诉类别的种类
+    print(dict_freq)
+    return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': str(dict_freq)}, ensure_ascii=False)),
+        mimetype="text/javascript")
+
+
+#接受数据
+def recive_data(texts):
+    """
+    从前端接收数据
+    :param texts: 前端接收的数据
+    :return: 返回数据框格式的数据，方便以后处理
+    """
+    text_array=[]
+    for i in texts.split('*@*'):
+        text_array.append(i)
+    text_df=pd.DataFrame({'gd_id':list(range(len(text_array))),'description':
+    text_array},columns=['gd_id', 'description'])
+    return text_df
+
+def read_model(main_path):
+    """
+    加载已经训练好的模型
+    :param path: 文件路径
+    :return: 训练好的模型
+    """
+    t=jl.load(main_path+'\\tfidf.m') #tfidf模型
+    com_chi2=jl.load(main_path+'\\select_feature.m')#刷选变量模型
+    com_model=jl.load(main_path+'\\classify_svc.m')#分类模型
+    return t,com_chi2,com_model
+
+
+#处理数据
+def dis_data(dataset,main_path):
+    """
+    处理现有数据
+    :param dataset: 要处理的数据
+    :return: 处理好的数据
+    """
+    dataset = dataset[dataset['description'].notnull()]
+    dataset.index=range(len(dataset))
+
+    #把投诉描述里面英文字母全部变成小写的
+    dataset['text'] = dataset['description'].str.lower()
+
+    #处理一些转换错误的词、同义词/近义词
+    dict_path = main_path + '\\dict\\'
+    f = open(dict_path + 'words_replace.txt', 'r', encoding='utf8')
+    for line in f.readlines():
+        value = line.strip().replace('\n','').split(',')
+        dataset['text'] = dataset['text'].str.replace(value[0], value[1])
+
+    #停用词
+    stopwords_path = dict_path+'stopwords.txt'
+    stop_set = set([value.replace('\n','') for value in open(stopwords_path, 'r', encoding='utf8').readlines()])
+
+    userdict_path = dict_path+'word_dict.txt'
+    jieba.load_userdict(userdict_path)
+
+    flag_ls = ['a','ad','b','d','f','i','l','m','n','nrt','ns','nt','nz','v','vn','x']
+
+    def pseg_cut_classify(text):
+        words = pseg.cut(text)
+        return ' '.join([w.word for w in words if w.flag in flag_ls and w.word not in stop_set and len(w.word)>=2])
+
+    dataset['cut'] = dataset['text'].map(pseg_cut_classify)
+
+
+    # 清洗用的正则表达式
+    res = re.compile(r'\s+')
+    red = re.compile(r'^(\d+)$')
+
+    # 清洗标点符号等异常字符
+    todel = dict.fromkeys(i for i in range(sys.maxunicode)
+                          if unicodedata.category(chr(i)) not in ('Lu', 'Ll', 'Lt', 'Lo', 'Nd', 'Nl', 'Zs'))
+
+    # 清洗分词结果的方法
+    def cleantext(text):
+        # try:
+        #     text = unicode(text)
+        # except:
+        #     pass
+        if text != '':
+            return re.sub(res, ' ', ' '.join(map(lambda x: re.sub(red, '', x), text.translate(todel).split(' ')))).strip()
+        else:
+            return text
+
+
+    # 对分词结果进行清洗
+    dataset['cut_clean'] = dataset['cut'].map(cleantext)
+    return dataset
+
+def model_fit(dataset,t,com_chi2,com_model):
+    """
+    预测结果
+    :param dataset: 数据
+    :param t: tfidf的模型
+    :param con_chi2: 刷选变量的文件
+    :param com_model: 分类模型
+    :return: 预测分类结果
+    """
+
+    features = t.transform(dataset['cut_clean'])
+    features_chi2 = com_chi2.transform(features)
+    predict_id = com_model.predict(features_chi2)
+    return predict_id
+
+
+def dict_df_classify(array_df):
+    """"
+    将数据框装换成字典形式，表示每个投诉类型的个数。
+    Arguments:
+    array_df --Series格式数据
+
+    returns:
+    返回字典形式的
+    """
+
+    df_count=array_df.value_counts()
+    dict_count={}
+    i=len(df_count)
+    for i in range(i):
+        dict_count[i]={'name':df_count.index[i],'value':df_count[i]}
+    return dict_count
+###############################################180320 聚类分析 end  #####################################
+
+
+
 # __init__()
 if __name__ == "__main__":
     # app = __init__()
