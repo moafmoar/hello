@@ -394,7 +394,7 @@ def word_count_new(k=10):
     '''
     #df = merge_df(df2, df1)
     df_word = pd.merge(df_word2, df_word1)
-    df_word.index = range(len(df_word2))
+    df_word.index = range(len(df_word))
     df_word['out'] = df_word['word'] + '/' + df_word['class'] + '/' + df_word['freq'].astype(str)
 
     '''
@@ -873,7 +873,7 @@ def word_count_chart():
     '''
     # df = merge_df(df2, df1)
     df_word = pd.merge(df_word2, df_word1)
-    df_word.index = range(len(df_word2))
+    df_word.index = range(len(df_word))
     df_word['out'] = df_word['word'] + '/' + df_word['class'] + '/' + df_word['freq'].astype(str)
 
     '''
