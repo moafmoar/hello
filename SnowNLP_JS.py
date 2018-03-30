@@ -1234,6 +1234,200 @@ def dict_out_new(df):
     out_dict['total']=len(df)
     return out_dict
 #########################################180327 聚类分析新功能 end  ########################################
+
+
+#########################################180329 聚类分析新功能 start  ########################################
+
+@app.route('/classify_text_new2',methods=['POST','GET'])
+def classify_text_new2():
+    starttime = datetime.datetime.now()
+    jsonp_callback = request.args.get('callback', 'jsonpCallback2')  # 这里的callback对应的值需要和ajax请求的callback保持一致。
+    # text = '读取字符串，返回单词和频率数据框,字典结构'
+
+    texts = request.values['text']
+    print(texts)
+    main_path = 'E:\workspalce\python\hello\zstp\py180208'
+    '''
+    step 1
+    '''
+    dataset = recive_data_new2(texts)
+
+    '''
+    step 2
+    '''
+    t, com_chi2, com_model = read_model_new2(main_path)  # 加载模型
+
+    '''
+    step 3
+    '''
+    dataset = dis_data_new2(dataset,main_path)  # 处理数据
+
+    '''
+    step 4
+    '''
+    predict_id = model_fit_new2(dataset, t, com_chi2, com_model)  # 预测问题分类
+
+    '''
+    step 5 
+    '''
+    dataset['predict_label'] = predict_id  # 预测标签列
+
+    '''
+    step 6
+    '''
+    dict_freq = dict_df_new2(dataset['predict_label'])  # 返回字典形式的投诉类别的种类
+
+    '''
+    step 7
+    '''
+    out_data = dict_out_new2(dataset)
+    print(out_data)
+
+    return Response(  # return的时候需要通过response返回数据并且将callback一并返回给客户端，这样才能请求成功。
+        "%s(%s);" % (jsonp_callback, json.dumps({'ok': True, 'data': str(out_data)}, ensure_ascii=False)),
+        mimetype="text/javascript")
+
+
+#接受数据
+def recive_data_new2(texts):
+    """
+    从前端接收数据
+    :param texts: 前端接收的数据
+    :return: 返回数据框格式的数据，方便以后处理
+    """
+    text_array_des=[]
+    text_array_label=[]
+    for i in texts.split('*@*'):
+        label,des=i.split()
+        text_array_label.append(label)
+        text_array_des.append(des)
+    text_df=pd.DataFrame({'gd_id':text_array_label,'description':\
+    text_array_des},columns=['gd_id', 'description'])
+    return text_df
+
+#读取模型
+def read_model_new2(main_path):
+    """
+    加载已经训练好的模型
+    :param path: 文件路径
+    :return: 训练好的模型
+    """
+    t=jl.load(main_path+'\\tfidf.m') #tfidf模型
+    com_chi2=jl.load(main_path+'\\select_feature.m')#刷选变量模型
+    com_model=jl.load(main_path+'\\classify_svc.m')#分类模型
+    return t,com_chi2,com_model
+
+#处理数据
+def dis_data_new2(dataset,main_path):
+    """
+    处理现有数据
+    :param dataset: 要处理的数据
+    :return: 处理好的数据
+    """
+    dataset = dataset[dataset['description'].notnull()]
+    dataset.index=range(len(dataset))
+
+    #把投诉描述里面英文字母全部变成小写的
+    dataset['text'] = dataset['description'].str.lower()
+
+    #处理一些转换错误的词、同义词/近义词
+    dict_path = main_path + '\\dict\\'
+    f = open(dict_path + 'words_replace.txt', 'r', encoding='utf8')
+    for line in f.readlines():
+        value = line.strip().replace('\n','').split(',')
+        dataset['text'] = dataset['text'].str.replace(value[0], value[1])
+
+    #停用词
+    stopwords_path = dict_path+'stopwords.txt'
+    stop_set = set([value.replace('\n','') for value in open(stopwords_path, 'r', encoding='utf8').readlines()])
+
+    userdict_path = dict_path+'word_dict.txt'
+    jieba.load_userdict(userdict_path)
+
+    flag_ls = ['a','ad','b','d','f','i','l','m','n','nrt','ns','nt','nz','v','vn','x']
+
+    def pseg_cut(text):
+        words = pseg.cut(text)
+        return ' '.join([w.word for w in words if w.flag in flag_ls and w.word not in stop_set and len(w.word)>=2])
+
+    dataset['cut'] = dataset['text'].map(pseg_cut)
+
+
+    # 清洗用的正则表达式
+    res = re.compile(r'\s+')
+    red = re.compile(r'^(\d+)$')
+
+    # 清洗标点符号等异常字符
+    todel = dict.fromkeys(i for i in range(sys.maxunicode)
+                          if unicodedata.category(chr(i)) not in ('Lu', 'Ll', 'Lt', 'Lo', 'Nd', 'Nl', 'Zs'))
+
+    # 清洗分词结果的方法
+    def cleantext(text):
+        # try:
+        #     text = unicode(text)
+        # except:
+        #     pass
+        if text != '':
+            return re.sub(res, ' ', ' '.join(map(lambda x: re.sub(red, '', x), text.translate(todel).split(' ')))).strip()
+        else:
+            return text
+
+
+    # 对分词结果进行清洗
+    dataset['cut_clean'] = dataset['cut'].map(cleantext)
+    return dataset
+
+def model_fit_new2(dataset,t,com_chi2,com_model):
+    """
+    预测结果
+    :param dataset: 数据
+    :param t: tfidf的模型
+    :param con_chi2: 刷选变量的文件
+    :param com_model: 分类模型
+    :return: 预测分类结果
+    """
+
+    features = t.transform(dataset['cut_clean'])
+    features_chi2 = com_chi2.transform(features)
+    predict_id = com_model.predict(features_chi2)
+    return predict_id
+
+def dict_df_new2(array_df):
+    """"
+    将数据框装换成字典形式，表示每个投诉类型的个数。
+    Arguments:
+    array_df --Series格式数据
+
+    returns:
+    返回字典形式的
+    """
+
+    df_count=array_df.value_counts()
+    dict_count={}
+    i=len(df_count)
+    for i in range(i):
+        dict_count[i]={'name':df_count.index[i],'value':df_count[i]}
+    return dict_count
+
+def dict_out_new2(df):
+    """
+    返回网页输出的json格式要求
+    :param df: 数据框结构的数据
+    :return: 网页输出要求的字典格式
+    """
+    out_dict={}
+    list_dict=[]
+    for i in range(len(df)):
+        dict_id={}
+        dict_id['id']=df['gd_id'][i]
+        dict_id['description']=df['predict_label'][i]
+        list_dict.append(dict_id)
+    out_dict['rows']=list_dict
+    out_dict['total']=len(df)
+    return out_dict
+
+#########################################180329 聚类分析新功能 end    ########################################
+
 # __init__()
 if __name__ == "__main__":
     # app = __init__()
